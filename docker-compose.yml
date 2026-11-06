@@ -1,0 +1,36 @@
+
+services:
+  db:
+    image: ghcr.io/hasankocaman/qa-shop-db:latest
+    environment:
+      POSTGRES_USER: qashop
+      POSTGRES_PASSWORD: qashop
+      POSTGRES_DB: qashop
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qashop -d qashop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: ghcr.io/hasankocaman/qa-shop-api:latest
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+      JWT_SECRET: "ci-test-secret-change-me"
+      TOKEN_TTL_SECONDS: "3600"
+      SANDBOX_TTL_DAYS: "7"
+      DATABASE_URL: "postgresql://qashop:qashop@db:5432/qashop"
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r => r.ok ? r.json() : Promise.reject()).then(d => process.exit(d.status === 'ok' && d.database === 'up' ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
