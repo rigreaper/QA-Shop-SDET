@@ -6,10 +6,12 @@ test('API health check', async ({ request }) => {
     const data = await response.json();
     const databaseData = data.database;
     //console.log(data);
-    
+
+
 
     
     expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('application/json');
     expect(data.status).toBe('ok');
     expect(databaseData).toBe("up");
     expect(typeof data.uptimeSeconds).toBe('number');
